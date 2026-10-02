@@ -1,4 +1,5 @@
 :root {
+  /* Темна тема (за замовчуванням) */
   --bg: #0f172a;
   --panel: #1e293b;
   --text: #e2e8f0;
@@ -7,8 +8,38 @@
   --border: #334155;
   --success: #22c55e;
   --error: #ef4444;
+  --input-bg: #0b1220;
+  --output-bg: #0b1220;
+  --output-text: #cbd5e1;
+  --btn-text: #082f49;
+  --btn-secondary-bg: var(--panel);
+  --btn-secondary-text: var(--text);
+  --link-color: #7dd3fc;
 }
+
+/* Світла тема */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --text: #0f172a;
+    --muted: #64748b;
+    --accent: #0284c7;
+    --border: #e2e8f0;
+    --success: #16a34a;
+    --error: #dc2626;
+    --input-bg: #f1f5f9;
+    --output-bg: #f1f5f9;
+    --output-text: #334155;
+    --btn-text: #0c4a6e;
+    --btn-secondary-bg: #f1f5f9;
+    --btn-secondary-text: #0f172a;
+    --link-color: #0369a1;
+  }
+}
+
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -16,26 +47,31 @@ body {
   color: var(--text);
   line-height: 1.5;
 }
+
 .container {
   max-width: 900px;
   margin: 0 auto;
   padding: 24px 16px 48px;
 }
+
 h1 {
   font-size: 1.6rem;
   margin: 0 0 8px;
 }
+
 p.subtitle {
   margin: 0 0 24px;
   color: var(--muted);
   font-size: 0.95rem;
 }
+
 .tabs {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
+
 .tab-btn {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -44,14 +80,16 @@ p.subtitle {
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
+
 .tab-btn.active {
-  background: #0ea5e9;
-  border-color: #0ea5e9;
-  color: #082f49;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
   font-weight: 600;
 }
+
 .panel {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -59,18 +97,21 @@ p.subtitle {
   padding: 16px;
   display: none;
 }
+
 .panel.active {
   display: block;
 }
+
 label {
   display: block;
   font-size: 0.85rem;
   color: var(--muted);
   margin-bottom: 6px;
 }
+
 textarea, input[type="text"] {
   width: 100%;
-  background: #0b1220;
+  background: var(--input-bg);
   border: 1px solid var(--border);
   color: var(--text);
   border-radius: 8px;
@@ -79,45 +120,51 @@ textarea, input[type="text"] {
   resize: vertical;
   min-height: 120px;
 }
+
 .row {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
   margin-bottom: 12px;
 }
+
 @media (min-width: 700px) {
   .row.two {
     grid-template-columns: 1fr 1fr;
   }
 }
+
 .actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin-top: 8px;
 }
+
 button.action {
-  background: #0ea5e9;
+  background: var(--accent);
   border: none;
-  color: #082f49;
+  color: #ffffff;
   padding: 8px 14px;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: filter 0.15s ease;
+  transition: filter 0.15s ease, opacity 0.15s ease;
 }
+
 button.action:hover {
   filter: brightness(1.05);
 }
+
 button.secondary {
-  background: var(--panel);
+  background: var(--btn-secondary-bg);
   border: 1px solid var(--border);
-  color: var(--text);
+  color: var(--btn-secondary-text);
 }
+
 .output-area {
-  margin-top: 16px;
-  background: #0b1220;
+  background: var(--output-bg);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
@@ -126,10 +173,11 @@ button.secondary {
   word-break: break-word;
   font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
   font-size: 0.85rem;
-  color: #cbd5e1;
+  color: var(--output-text);
   max-height: 260px;
   overflow: auto;
 }
+
 .file-drop {
   border: 2px dashed var(--border);
   border-radius: 12px;
@@ -139,30 +187,37 @@ button.secondary {
   transition: border-color 0.15s ease, background 0.15s ease;
   cursor: pointer;
 }
+
 .file-drop.dragover {
   border-color: var(--accent);
-  background: rgba(56, 189, 248, 0.06);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
+
 .file-info {
   margin-top: 10px;
   font-size: 0.85rem;
   color: var(--muted);
 }
+
 .status {
   margin-top: 8px;
   font-size: 0.85rem;
 }
+
 .status.success { color: var(--success); }
 .status.error { color: var(--error); }
+
 .small {
   font-size: 0.8rem;
   color: var(--muted);
   margin-top: 4px;
 }
+
 a.link {
-  color: #7dd3fc;
+  color: var(--link-color);
   text-decoration: none;
 }
+
 a.link:hover {
   text-decoration: underline;
 }
