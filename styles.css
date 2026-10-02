@@ -109,3 +109,60 @@ button.action {
 }
 button.action:hover {
   filter: brightness(1.05);
+}
+button.secondary {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.output-area {
+  margin-top: 16px;
+  background: #0b1220;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 80px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  max-height: 260px;
+  overflow: auto;
+}
+.file-drop {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  text-align: center;
+  color: var(--muted);
+  transition: border-color 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+}
+.file-drop.dragover {
+  border-color: var(--accent);
+  background: rgba(56, 189, 248, 0.06);
+}
+.file-info {
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.status {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+.status.success { color: var(--success); }
+.status.error { color: var(--error); }
+.small {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+a.link {
+  color: #7dd3fc;
+  text-decoration: none;
+}
+a.link:hover {
+  text-decoration: underline;
+}
