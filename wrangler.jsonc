@@ -2,6 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "base64coder",
   "compatibility_date": "2026-10-02",
-  "pages_build_output_dir": "./",
-  "previews": {}
+  "assets": {
+    "directory": "./public"
+  }
 }
