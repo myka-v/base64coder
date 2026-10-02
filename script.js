@@ -1,4 +1,4 @@
-// Tabs logic
+// Tabs
 const tabButtons = document.querySelectorAll('.tab-btn');
 const panels = document.querySelectorAll('.panel');
 
@@ -28,6 +28,7 @@ function clearStatus(el) {
   el.className = 'status';
 }
 
+// UTF‑8 текст ↔ base64
 function utf8ToBase64(str) {
   const bytes = new TextEncoder().encode(str);
   let binary = '';
@@ -46,6 +47,24 @@ function base64ToUtf8(base64) {
   return new TextDecoder().decode(bytes);
 }
 
+// Бінарні дані (Uint8Array) ↔ base64
+function uint8ToBase64(u8) {
+  let binary = '';
+  for (let i = 0; i < u8.length; i++) {
+    binary += String.fromCharCode(u8[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 function sanitizeBase64(str) {
   return str.replace(/\s+/g, '');
 }
@@ -54,277 +73,337 @@ function copyText(text) {
   return navigator.clipboard.writeText(text);
 }
 
-// Текст → Base64
-const teInput = document.getElementById('te-input');
-const teOutput = document.getElementById('te-output');
-const teEncodeBtn = document.getElementById('te-encode');
-const teCopyBtn = document.getElementById('te-copy');
-const teClearBtn = document.getElementById('te-clear');
-const teStatus = document.getElementById('te-status');
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
 
-teEncodeBtn.addEventListener('click', () => {
-  try {
-    const text = teInput.value;
-    const encoded = utf8ToBase64(text);
-    teOutput.textContent = encoded;
-    setStatus(teStatus, 'Успішно закодовано.', 'success');
-  } catch (e) {
-    teOutput.textContent = '';
-    setStatus(teStatus, 'Помилка кодування: ' + e.message, 'error');
-  }
-});
+// ===== Кодування (Encode) =====
 
-teCopyBtn.addEventListener('click', async () => {
-  const text = teOutput.textContent;
-  if (!text) {
-    setStatus(teStatus, 'Немає тексту для копіювання.', 'error');
-    return;
-  }
-  try {
-    await copyText(text);
-    setStatus(teStatus, 'Скопійовано в буфер обміну.', 'success');
-  } catch {
-    setStatus(teStatus, 'Не вдалося скопіювати.', 'error');
-  }
-});
+const encTextarea = document.getElementById('enc-textarea');
+const encFileInput = document.getElementById('enc-file');
+const encDrop = document.getElementById('enc-drop');
+const encFileInfo = document.getElementById('enc-file-info');
+const encOutput = document.getElementById('enc-output');
+const encRunBtn = document.getElementById('enc-run');
+const encCopyBtn = document.getElementById('enc-copy');
+const encDownloadBtn = document.getElementById('enc-download');
+const encClearBtn = document.getElementById('enc-clear');
+const encStatus = document.getElementById('enc-status');
 
-teClearBtn.addEventListener('click', () => {
-  teInput.value = '';
-  teOutput.textContent = '';
-  clearStatus(teStatus);
-});
+let encSelectedFile = null;
 
-// Base64 → Текст
-const tdInput = document.getElementById('td-input');
-const tdOutput = document.getElementById('td-output');
-const tdDecodeBtn = document.getElementById('td-decode');
-const tdCopyBtn = document.getElementById('td-copy');
-const tdClearBtn = document.getElementById('td-clear');
-const tdStatus = document.getElementById('td-status');
-
-tdDecodeBtn.addEventListener('click', () => {
-  try {
-    const raw = tdInput.value;
-    const b64 = sanitizeBase64(raw);
-    if (!b64) {
-      setStatus(tdStatus, 'Введіть base64.', 'error');
-      tdOutput.textContent = '';
-      return;
-    }
-    const decoded = base64ToUtf8(b64);
-    tdOutput.textContent = decoded;
-    setStatus(tdStatus, 'Успішно декодовано.', 'success');
-  } catch (e) {
-    tdOutput.textContent = '';
-    setStatus(tdStatus, 'Помилка декодування: ' + e.message, 'error');
-  }
-});
-
-tdCopyBtn.addEventListener('click', async () => {
-  const text = tdOutput.textContent;
-  if (!text) {
-    setStatus(tdStatus, 'Немає тексту для копіювання.', 'error');
-    return;
-  }
-  try {
-    await copyText(text);
-    setStatus(tdStatus, 'Скопійовано в буфер обміну.', 'success');
-  } catch {
-    setStatus(tdStatus, 'Не вдалося скопіювати.', 'error');
-  }
-});
-
-tdClearBtn.addEventListener('click', () => {
-  tdInput.value = '';
-  tdOutput.textContent = '';
-  clearStatus(tdStatus);
-});
-
-// Файл → Base64
-const feDrop = document.getElementById('fe-drop');
-const feFileInput = document.getElementById('fe-file');
-const feInfo = document.getElementById('fe-info');
-const feOutput = document.getElementById('fe-output');
-const feEncodeBtn = document.getElementById('fe-encode');
-const feCopyBtn = document.getElementById('fe-copy');
-const feClearBtn = document.getElementById('fe-clear');
-const feStatus = document.getElementById('fe-status');
-
-let selectedFile = null;
-
-feDrop.addEventListener('click', () => feFileInput.click());
-feFileInput.addEventListener('change', (e) => {
+// File select / drag-drop
+encDrop.addEventListener('click', () => encFileInput.click());
+encFileInput.addEventListener('change', (e) => {
   const file = e.target.files && e.target.files[0];
   if (file) {
-    selectedFile = file;
-    feInfo.textContent = `Обрано: ${file.name} (${file.size} байт, ${file.type || 'невідомий тип'})`;
-    clearStatus(feStatus);
+    encSelectedFile = file;
+    encFileInfo.textContent = `Обрано: ${file.name} (${file.size} байт, ${file.type || 'невідомий тип'})`;
+    clearStatus(encStatus);
   }
 });
 
 ['dragenter', 'dragover'].forEach(evt =>
-  feDrop.addEventListener(evt, (e) => {
+  encDrop.addEventListener(evt, (e) => {
     e.preventDefault();
-    feDrop.classList.add('dragover');
+    encDrop.classList.add('dragover');
   })
 );
 ['dragleave', 'drop'].forEach(evt =>
-  feDrop.addEventListener(evt, (e) => {
+  encDrop.addEventListener(evt, (e) => {
     e.preventDefault();
-    feDrop.classList.remove('dragover');
+    encDrop.classList.remove('dragover');
   })
 );
-feDrop.addEventListener('drop', (e) => {
+encDrop.addEventListener('drop', (e) => {
   const file = e.dataTransfer.files && e.dataTransfer.files[0];
   if (file) {
-    selectedFile = file;
-    feFileInput.files = e.dataTransfer.files;
-    feInfo.textContent = `Обрано: ${file.name} (${file.size} байт, ${file.type || 'невідомий тип'})`;
-    clearStatus(feStatus);
+    encSelectedFile = file;
+    encFileInput.files = e.dataTransfer.files;
+    encFileInfo.textContent = `Обрано: ${file.name} (${file.size} байт, ${file.type || 'невідомий тип'})`;
+    clearStatus(encStatus);
   }
 });
 
-function fileToBase64(file) {
+function fileToArrayBuffer(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      const commaIndex = dataUrl.indexOf(',');
-      if (commaIndex === -1) {
-        reject(new Error('Некоректний результат FileReader'));
-        return;
-      }
-      const base64 = dataUrl.slice(commaIndex + 1);
-      resolve(base64);
-    };
+    reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error || new Error('Помилка читання файлу'));
-    reader.readAsDataURL(file);
+    reader.readAsArrayBuffer(file);
   });
 }
 
-feEncodeBtn.addEventListener('click', async () => {
-  if (!selectedFile) {
-    setStatus(feStatus, 'Оберіть файл.', 'error');
-    return;
-  }
+encRunBtn.addEventListener('click', async () => {
   try {
-    feOutput.textContent = 'Кодування...';
-    const base64 = await fileToBase64(selectedFile);
-    feOutput.textContent = base64;
-    setStatus(feStatus, 'Файл успішно закодовано.', 'success');
+    encOutput.textContent = 'Обробка...';
+    clearStatus(encStatus);
+
+    let base64Result = '';
+    let sourceIsFile = false;
+    let sourceFileName = '';
+    let sourceIsBinary = false;
+
+    if (encSelectedFile) {
+      sourceIsFile = true;
+      sourceFileName = encSelectedFile.name;
+      const arrayBuffer = await fileToArrayBuffer(encSelectedFile);
+      const u8 = new Uint8Array(arrayBuffer);
+      base64Result = uint8ToBase64(u8);
+      sourceIsBinary = true;
+    } else {
+      const text = encTextarea.value;
+      base64Result = utf8ToBase64(text);
+      sourceIsBinary = false;
+    }
+
+    encOutput.textContent = base64Result;
+
+    // Метадані для завантаження
+    encOutput.dataset.sourceIsFile = sourceIsFile ? '1' : '0';
+    encOutput.dataset.sourceFileName = sourceFileName || '';
+    encOutput.dataset.sourceIsBinary = sourceIsBinary ? '1' : '0';
+
+    setStatus(encStatus, 'Успішно закодовано.', 'success');
   } catch (e) {
-    feOutput.textContent = '';
-    setStatus(feStatus, 'Помилка кодування файлу: ' + e.message, 'error');
+    encOutput.textContent = '';
+    setStatus(encStatus, 'Помилка кодування: ' + e.message, 'error');
   }
 });
 
-feCopyBtn.addEventListener('click', async () => {
-  const text = feOutput.textContent;
-  if (!text || text.startsWith('Кодування')) {
-    setStatus(feStatus, 'Немає base64 для копіювання.', 'error');
+encCopyBtn.addEventListener('click', async () => {
+  const text = encOutput.textContent;
+  if (!text || text === 'Обробка...') {
+    setStatus(encStatus, 'Немає результату для копіювання.', 'error');
     return;
   }
   try {
     await copyText(text);
-    setStatus(feStatus, 'Скопійовано в буфер обміну.', 'success');
+    setStatus(encStatus, 'Скопійовано в буфер обміну.', 'success');
   } catch {
-    setStatus(feStatus, 'Не вдалося скопіювати.', 'error');
+    setStatus(encStatus, 'Не вдалося скопіювати.', 'error');
   }
 });
 
-feClearBtn.addEventListener('click', () => {
-  selectedFile = null;
-  feFileInput.value = '';
-  feInfo.textContent = '';
-  feOutput.textContent = '';
-  clearStatus(feStatus);
+encDownloadBtn.addEventListener('click', () => {
+  const text = encOutput.textContent;
+  if (!text || text === 'Обробка...') {
+    setStatus(encStatus, 'Немає результату для завантаження.', 'error');
+    return;
+  }
+
+  const sourceIsFile = encOutput.dataset.sourceIsFile === '1';
+  const sourceFileName = encOutput.dataset.sourceFileName || '';
+
+  let filename = 'results.base64';
+  if (sourceIsFile && sourceFileName) {
+    filename = sourceFileName + '.base64';
+  }
+
+  const blob = new Blob([text], { type: 'text/plain' });
+  downloadBlob(blob, filename);
+  setStatus(encStatus, 'Файл завантажено.', 'success');
 });
 
-// Base64 → Файл
-const fdInput = document.getElementById('fd-input');
-const fdFilename = document.getElementById('fd-filename');
-const fdMime = document.getElementById('fd-mime');
-const fdOutput = document.getElementById('fd-output');
-const fdDecodeBtn = document.getElementById('fd-decode');
-const fdClearBtn = document.getElementById('fd-clear');
-const fdStatus = document.getElementById('fd-status');
+encClearBtn.addEventListener('click', () => {
+  encTextarea.value = '';
+  encSelectedFile = null;
+  encFileInput.value = '';
+  encFileInfo.textContent = '';
+  encOutput.textContent = '';
+  encOutput.dataset.sourceIsFile = '';
+  encOutput.dataset.sourceFileName = '';
+  encOutput.dataset.sourceIsBinary = '';
+  clearStatus(encStatus);
+});
 
-function base64ToBlob(base64, mime) {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
+// ===== Декодування (Decode) =====
+
+const decTextarea = document.getElementById('dec-textarea');
+const decFileInput = document.getElementById('dec-file');
+const decDrop = document.getElementById('dec-drop');
+const decFileInfo = document.getElementById('dec-file-info');
+const decOutput = document.getElementById('dec-output');
+const decRunBtn = document.getElementById('dec-run');
+const decCopyBtn = document.getElementById('dec-copy');
+const decDownloadBtn = document.getElementById('dec-download');
+const decClearBtn = document.getElementById('dec-clear');
+const decStatus = document.getElementById('dec-status');
+
+let decSelectedFile = null;
+let decResultType = 'none'; // 'none' | 'text' | 'binary'
+let decResultText = '';    // для text
+let decResultBytes = null; // Uint8Array для binary
+let decSourceFileName = '';
+
+// File select / drag-drop
+decDrop.addEventListener('click', () => decFileInput.click());
+decFileInput.addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (file) {
+    decSelectedFile = file;
+    decSourceFileName = file.name;
+    decFileInfo.textContent = `Обрано: ${file.name} (${file.size} байт, ${file.type || 'невідомий тип'})`;
+    clearStatus(decStatus);
   }
-  return new Blob([bytes], { type: mime || 'application/octet-stream' });
+});
+
+['dragenter', 'dragover'].forEach(evt =>
+  decDrop.addEventListener(evt, (e) => {
+    e.preventDefault();
+    decDrop.classList.add('dragover');
+  })
+);
+['dragleave', 'drop'].forEach(evt =>
+  decDrop.addEventListener(evt, (e) => {
+    e.preventDefault();
+    decDrop.classList.remove('dragover');
+  })
+);
+decDrop.addEventListener('drop', (e) => {
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) {
+    decSelectedFile = file;
+    decSourceFileName = file.name;
+    decFileInput.files = e.dataTransfer.files;
+    decFileInfo.textContent = `Обрано: ${file.name} (${file.size} байт, ${file.type || 'невідомий тип'})`;
+    clearStatus(decStatus);
+  }
+});
+
+function readTextFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Помилка читання файлу'));
+    reader.readAsText(file);
+  });
 }
 
-fdDecodeBtn.addEventListener('click', () => {
+decRunBtn.addEventListener('click', async () => {
   try {
-    const raw = fdInput.value;
-    const b64 = sanitizeBase64(raw);
-    if (!b64) {
-      setStatus(fdStatus, 'Введіть base64.', 'error');
-      fdOutput.textContent = 'Файл буде доступний для завантаження після декодування.';
+    decOutput.textContent = 'Обробка...';
+    decResultType = 'none';
+    decResultText = '';
+    decResultBytes = null;
+    clearStatus(decStatus);
+
+    let base64Input = '';
+    let sourceIsFile = false;
+
+    if (decSelectedFile) {
+      sourceIsFile = true;
+      const text = await readTextFile(decSelectedFile);
+      base64Input = sanitizeBase64(text);
+    } else {
+      const raw = decTextarea.value;
+      base64Input = sanitizeBase64(raw);
+      sourceIsFile = false;
+    }
+
+    if (!base64Input) {
+      decOutput.textContent = "Результат з'явиться тут після декодування.";
+      setStatus(decStatus, 'Введіть base64 або оберіть файл.', 'error');
       return;
     }
 
-    const mime = (fdMime.value || '').trim() || 'application/octet-stream';
-    const blob = base64ToBlob(b64, mime);
-    const url = URL.createObjectURL(blob);
+    // Спробуємо декодувати як бінарні дані (універсально)
+    const bytes = base64ToUint8(base64Input);
 
-    let filename = (fdFilename.value || '').trim();
-    if (!filename) {
-      const ext = mimeToExtension(mime);
-      filename = 'download' + (ext ? '.' + ext : '');
+    // Спробуємо інтерпретувати як UTF‑8 текст
+    const decodedText = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+
+    // Якщо вхід був файл — вважаємо результат бінарним (не псуємо текст)
+    if (sourceIsFile) {
+      decResultType = 'binary';
+      decResultBytes = bytes;
+      decOutput.textContent = '(Бінарний файл, доступний для завантаження)';
+      setStatus(decStatus, 'Успішно декодовано (бінарний файл).', 'success');
+    } else {
+      // Вхід — текст, показуємо як текст
+      decResultType = 'text';
+      decResultText = decodedText;
+      decOutput.textContent = decodedText;
+      setStatus(decStatus, 'Успішно декодовано.', 'success');
     }
 
-    fdOutput.innerHTML = '';
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.textContent = `Завантажити файл: ${filename}`;
-    link.className = 'link';
-    fdOutput.appendChild(link);
-
-    const info = document.createElement('div');
-    info.className = 'small';
-    info.style.marginTop = '8px';
-    info.textContent = `Розмір: ${blob.size} байт, тип: ${mime}`;
-    fdOutput.appendChild(info);
-
-    setStatus(fdStatus, 'Файл готовий до завантаження.', 'success');
+    // Метадані для завантаження
+    decOutput.dataset.sourceIsFile = sourceIsFile ? '1' : '0';
+    decOutput.dataset.sourceFileName = decSourceFileName || '';
   } catch (e) {
-    fdOutput.textContent = 'Файл буде доступний для завантаження після декодування.';
-    setStatus(fdStatus, 'Помилка декодування: ' + e.message, 'error');
+    decOutput.textContent = "Результат з'явиться тут після декодування.";
+    decResultType = 'none';
+    decResultText = '';
+    decResultBytes = null;
+    setStatus(decStatus, 'Помилка декодування: ' + e.message, 'error');
   }
 });
 
-function mimeToExtension(mime) {
-  const map = {
-    'text/plain': 'txt',
-    'text/html': 'html',
-    'text/css': 'css',
-    'text/javascript': 'js',
-    'application/json': 'json',
-    'application/pdf': 'pdf',
-    'image/png': 'png',
-    'image/jpeg': 'jpg',
-    'image/gif': 'gif',
-    'image/svg+xml': 'svg',
-    'application/zip': 'zip',
-    'application/msword': 'doc',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
-    'application/vnd.ms-excel': 'xls',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
-    'application/octet-stream': 'bin'
-  };
-  return map[mime] || '';
-}
+decCopyBtn.addEventListener('click', async () => {
+  if (decResultType === 'none') {
+    setStatus(decStatus, 'Немає результату для копіювання.', 'error');
+    return;
+  }
 
-fdClearBtn.addEventListener('click', () => {
-  fdInput.value = '';
-  fdFilename.value = '';
-  fdMime.value = '';
-  fdOutput.textContent = 'Файл буде доступний для завантаження після декодування.';
-  clearStatus(fdStatus);
+  if (decResultType === 'text') {
+    try {
+      await copyText(decResultText);
+      setStatus(decStatus, 'Скопійовано в буфер обміну.', 'success');
+    } catch {
+      setStatus(decStatus, 'Не вдалося скопіювати.', 'error');
+    }
+  } else if (decResultType === 'binary') {
+    setStatus(
+      decStatus,
+      'Результат — бінарний файл. Копіювання як текст не підтримується. Завантажте файл.',
+      'error'
+    );
+  }
+});
+
+decDownloadBtn.addEventListener('click', () => {
+  if (decResultType === 'none') {
+    setStatus(decStatus, 'Немає результату для завантаження.', 'error');
+    return;
+  }
+
+  const sourceIsFile = decOutput.dataset.sourceIsFile === '1';
+  const sourceFileName = decOutput.dataset.sourceFileName || '';
+
+  let filename = 'results.decoded';
+  if (sourceIsFile && sourceFileName) {
+    filename = sourceFileName + '.decoded';
+  }
+
+  if (decResultType === 'text') {
+    const blob = new Blob([decResultText], { type: 'text/plain' });
+    downloadBlob(blob, filename);
+    setStatus(decStatus, 'Файл завантажено.', 'success');
+  } else if (decResultType === 'binary') {
+    const blob = new Blob([decResultBytes], { type: 'application/octet-stream' });
+    downloadBlob(blob, filename);
+    setStatus(decStatus, 'Файл завантажено.', 'success');
+  }
+});
+
+decClearBtn.addEventListener('click', () => {
+  decTextarea.value = '';
+  decSelectedFile = null;
+  decSourceFileName = '';
+  decFileInput.value = '';
+  decFileInfo.textContent = '';
+  decOutput.textContent = "Результат з'явиться тут після декодування.";
+  decOutput.dataset.sourceIsFile = '';
+  decOutput.dataset.sourceFileName = '';
+  decResultType = 'none';
+  decResultText = '';
+  decResultBytes = null;
+  clearStatus(decStatus);
 });

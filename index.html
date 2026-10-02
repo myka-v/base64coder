@@ -9,109 +9,85 @@
 <body>
   <div class="container">
     <h1>Base64 Encode/Decode</h1>
-    <p class="subtitle">Кодування та декодування тексту та файлів у base64.</p>
+    <p class="subtitle">Кодування та декодування тексту й файлів у base64. Працює повністю в браузері.</p>
 
     <div class="tabs" role="tablist" aria-label="Режими роботи">
-      <button class="tab-btn active" data-tab="text-encode" role="tab" aria-selected="true">Текст → Base64</button>
-      <button class="tab-btn" data-tab="text-decode" role="tab" aria-selected="false">Base64 → Текст</button>
-      <button class="tab-btn" data-tab="file-encode" role="tab" aria-selected="false">Файл → Base64</button>
-      <button class="tab-btn" data-tab="file-decode" role="tab" aria-selected="false">Base64 → Файл</button>
+      <button class="tab-btn active" data-tab="encode" role="tab" aria-selected="true">Кодувати у Base64</button>
+      <button class="tab-btn" data-tab="decode" role="tab" aria-selected="false">Декодувати Base64</button>
     </div>
 
-    <!-- Текст → Base64 -->
-    <div id="text-encode" class="panel active" role="tabpanel" aria-labelledby="text-encode">
+    <!-- Кодувати у Base64 -->
+    <div id="encode" class="panel active" role="tabpanel" aria-labelledby="encode">
       <div class="row two">
         <div>
-          <label for="te-input">Введіть текст</label>
-          <textarea id="te-input" placeholder="Текст для кодування в base64..."></textarea>
-          <div class="small">Підтримує Unicode (українські літери тощо).</div>
+          <label>Вхідні дані</label>
+
+          <label for="enc-textarea" style="margin-top:8px;">Текст для кодування</label>
+          <textarea id="enc-textarea" placeholder="Введіть текст для кодування в base64..."></textarea>
+
+          <label for="enc-file" style="margin-top:12px;">Або оберіть файл</label>
+          <div id="enc-drop" class="file-drop">
+            Перетягніть файл сюди або натисніть, щоб обрати
+            <input type="file" id="enc-file" style="display:none" />
+          </div>
+          <div id="enc-file-info" class="file-info"></div>
+
+          <div class="small" style="margin-top:8px;">
+            Якщо обрано файл, текст із поля ігнорується.
+          </div>
         </div>
+
         <div>
           <label>Результат (base64)</label>
-          <div id="te-output" class="output-area"></div>
+          <div id="enc-output" class="output-area"></div>
+
           <div class="actions">
-            <button class="action" id="te-encode">Закодувати</button>
-            <button class="action secondary" id="te-copy">Копіювати</button>
-            <button class="action secondary" id="te-clear">Очистити</button>
+            <button class="action" id="enc-run">Закодувати</button>
+            <button class="action secondary" id="enc-copy">Копіювати</button>
+            <button class="action secondary" id="enc-download">Завантажити файл</button>
+            <button class="action secondary" id="enc-clear">Очистити</button>
           </div>
-          <div id="te-status" class="status"></div>
+          <div id="enc-status" class="status"></div>
         </div>
       </div>
     </div>
 
-    <!-- Base64 → Текст -->
-    <div id="text-decode" class="panel" role="tabpanel" aria-labelledby="text-decode">
+    <!-- Декодувати Base64 -->
+    <div id="decode" class="panel" role="tabpanel" aria-labelledby="decode">
       <div class="row two">
         <div>
-          <label for="td-input">Введіть base64</label>
-          <textarea id="td-input" placeholder="Base64 для декодування у текст..."></textarea>
-          <div class="small">Можна вставляти рядки з переносами.</div>
-        </div>
-        <div>
-          <label>Результат (текст)</label>
-          <div id="td-output" class="output-area"></div>
-          <div class="actions">
-            <button class="action" id="td-decode">Декодувати</button>
-            <button class="action secondary" id="td-copy">Копіювати</button>
-            <button class="action secondary" id="td-clear">Очистити</button>
+          <label>Вхідні дані</label>
+
+          <label for="dec-textarea" style="margin-top:8px;">Base64 для декодування</label>
+          <textarea id="dec-textarea" placeholder="Введіть base64 для декодування у текст..."></textarea>
+
+          <label for="dec-file" style="margin-top:12px;">Або оберіть файл (текстовий, з base64)</label>
+          <div id="dec-drop" class="file-drop">
+            Перетягніть файл сюди або натисніть, щоб обрати
+            <input type="file" id="dec-file" style="display:none" />
           </div>
-          <div id="td-status" class="status"></div>
+          <div id="dec-file-info" class="file-info"></div>
+
+          <div class="small" style="margin-top:8px;">
+            Якщо обрано файл, текст із поля ігнорується. Файл має містити base64 (можна з переносами).
+          </div>
+        </div>
+
+        <div>
+          <label>Результат (текст/файл)</label>
+          <div id="dec-output" class="output-area">Результат з'явиться тут після декодування.</div>
+
+          <div class="actions">
+            <button class="action" id="dec-run">Декодувати</button>
+            <button class="action secondary" id="dec-copy">Копіювати</button>
+            <button class="action secondary" id="dec-download">Завантажити файл</button>
+            <button class="action secondary" id="dec-clear">Очистити</button>
+          </div>
+          <div id="dec-status" class="status"></div>
         </div>
       </div>
     </div>
 
-    <!-- Файл → Base64 -->
-    <div id="file-encode" class="panel" role="tabpanel" aria-labelledby="file-encode">
-      <label>Оберіть файл</label>
-      <div id="fe-drop" class="file-drop">
-        Перетягніть файл сюди або натисніть, щоб обрати
-        <input type="file" id="fe-file" style="display:none" />
-      </div>
-      <div id="fe-info" class="file-info"></div>
-
-      <div class="row" style="margin-top:12px;">
-        <div>
-          <label>Результат (base64)</label>
-          <div id="fe-output" class="output-area"></div>
-          <div class="actions">
-            <button class="action" id="fe-encode">Закодувати файл</button>
-            <button class="action secondary" id="fe-copy">Копіювати</button>
-            <button class="action secondary" id="fe-clear">Очистити</button>
-          </div>
-          <div id="fe-status" class="status"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Base64 → Файл -->
-    <div id="file-decode" class="panel" role="tabpanel" aria-labelledby="file-decode">
-      <div class="row two">
-        <div>
-          <label for="fd-input">Введіть base64</label>
-          <textarea id="fd-input" placeholder="Base64 для декодування у файл..."></textarea>
-          <div class="small">Якщо відомо, вкажіть ім’я файлу та MIME-тип (необов’язково).</div>
-          <div class="row" style="margin-top:8px;">
-            <div>
-              <label for="fd-filename">Ім’я файлу (необов’язково)</label>
-              <input type="text" id="fd-filename" placeholder="наприклад: document.pdf" />
-            </div>
-            <div>
-              <label for="fd-mime">MIME-тип (необов’язково)</label>
-              <input type="text" id="fd-mime" placeholder="наприклад: application/pdf" />
-            </div>
-          </div>
-        </div>
-        <div>
-          <label>Результат</label>
-          <div id="fd-output" class="output-area">Файл буде доступний для завантаження після декодування.</div>
-          <div class="actions">
-            <button class="action" id="fd-decode">Декодувати у файл</button>
-            <button class="action secondary" id="fd-clear">Очистити</button>
-          </div>
-          <div id="fd-status" class="status"></div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <script src="script.js"></script>
