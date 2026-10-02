@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "feature-add-language-base64coder",
+  "name": "base64coder",
   "compatibility_date": "2026-10-02",
   "assets": {
     "directory": "./public"
